@@ -94,9 +94,9 @@ func (p *ControllerTabCluster) initUI() {
 	p.P.PaddingTop = 1
 
 	//Defining options to exec into a pod
-	commands := []string{"curl", "-ks", "https://localhost:443/summary"}
-	pod := p.K8s.GetPodName("name")
-	p.P_exec.Text = p.K8s.Exec("namespace", pod, commands)
+	// commands := []string{"curl", "-ks", "https://localhost:443/summary"}
+	// pod := p.K8s.GetPodName("name")
+	// p.P_exec.Text = p.K8s.Exec("namespace", pod, commands)
 	p.P_exec.Title = "Summary"
 	p.P_exec.TitleStyle.Fg = ui.ColorGreen
 	p.P_exec.PaddingLeft = 2

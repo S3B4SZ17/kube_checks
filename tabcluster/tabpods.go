@@ -68,28 +68,16 @@ func (p *ControllerTabPods) initUI() {
 	ui.Render(p.GridTabPods)
 }
 
-func (p *ControllerTabPods) Render() {
-	app1 := make(chan string)
-	app2 := make(chan string)
-	app3 := make(chan string)
+func (p *ControllerTabPods) Render(config *healthcheck.Config) {
+	health := make(chan string)
 
+	for _, v:= range config.Endpoints{
+		go func() {
+			healthcheck.Healthchecks(&v.Url, health)
+    	}()
+	}
 
-    go func() {
-        api_endpoint := "/api/app1/v3/health/all"
-        healthcheck.Healthchecks(&api_endpoint, app1)
-    }()
-	go func() {
-        api_endpoint := "/api/app2/v3/health/all"
-        healthcheck.Healthchecks(&api_endpoint, app2)
-
-    }()
-	go func() {
-        api_endpoint := "/api/app3/v3/health/all"
-        healthcheck.Healthchecks(&api_endpoint, app3)
-
-    }()
-
-	p.App1.Text = <-app1
+	p.App1.Text = <-health
 	p.resize()
 	ui.Render(p.GridTabPods)
 }
