@@ -1,6 +1,7 @@
 ---
+vault_url: http://localhost:8200
 endpoints:
   - app: app1
-    url: /api/app1/v3/health/all
+    url: /ping
   - app: app2
-    url: /api/app2/v3/health/all
+    url: /home

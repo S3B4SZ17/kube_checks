@@ -12,7 +12,7 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
-func Run(k8s *healthcheck.K8s) {
+func Run(k8s *healthcheck.K8s, config *healthcheck.Config) {
    if err := ui.Init(); err != nil {
       log.Fatalf("[Error] Failed to initialize termui: %v", err)
    }
@@ -34,7 +34,7 @@ func Run(k8s *healthcheck.K8s) {
 	renderTab := func() {
 		switch tabpane.ActiveTabIndex {
 		case 0:
-			pods_controller.Render()
+			pods_controller.Render(config)
 		case 1:
 			errors_controller.Render()
 		case 2:

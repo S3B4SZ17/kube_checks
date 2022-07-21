@@ -21,12 +21,12 @@ var basic_auth string
 var env string
 
 func GetEnv() string {
-	cmd := "oc whoami --show-console"
-	rgx := regexp2.MustCompile("\\w+-\\w+\\d+(?=-cluster-01)", 0)
+	cmd := "kubectl config current-context"
+	rgx := regexp2.MustCompile("(?<=\\/).*(?=:\\d+)", 0)
 
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		log.Fatal("[Error] Please log in to the cluster: oc login ...")
+		log.Fatal("[Error] Please log in to the cluster: kubectl login ...")
 	}
 	if env, _ := rgx.FindStringMatch(string(out)); env != nil {
 		return env.String()
@@ -70,22 +70,20 @@ func Healthchecks(api_endpoint *string, ch chan string) {
 
 }
 
-func getVultCredentials() {
+func getVultCredentials(vault_url *string) {
 	vault_path := checkIfProd()
 	config := vault.DefaultConfig()
-	config.Address = "https://vault.com"
+	config.Address = *vault_url
 	client, err := vault.NewClient(config)
 	if err != nil {
 		log.Fatalf("[Vault Error]: Unable to initialize Vault client: %v", err)
 	}
 	client.SetToken(*token)
 
-	// Read a secret
 	secret, err := client.Logical().Read(*vault_path)
 	if err != nil {
 		log.Fatalf("[Vault Error]: Unable to read secret: %v \n\n Probably your token is expired.", err)
 	}
-
 	data, ok := secret.Data["data"].(map[string]interface{})
 	if !ok {
 		log.Fatalf("Data type assertion failed: %T %#v", secret.Data["data"], secret.Data["data"])
@@ -94,22 +92,24 @@ func getVultCredentials() {
 }
 
 func checkIfProd() *string {
+	//[Invalid path for a versioned K/V secrets engine. See the API docs for the appropriate API endpoints to use. If using the Vault CLI, use 'vault kv get' for this operation.
+	// Use the /secret/data/ path for V2 of the Vault engine
 	var vault_path string
-	if strings.Contains(env, "cs") {
-		vault_path = "/secret/EC2/" + env + "/credentials"
+	if strings.Contains(env, "prod") {
+		vault_path = "/secret/data/EC2/" + env + "/credentials"
 	} else if strings.Contains(env, "dev") {
-		vault_path = "/secret/EC2/dev/" + env + "/credentials"
+		vault_path = "/secret/data/EC2/dev/" + env + "/credentials"
 	}else {
-		vault_path = "/secret/EC2/qa/" + env + "/credentials"
+		vault_path = "/secret/data/EC2/credentials"
 	}
 
 	return &vault_path
 }
 
-func SetCredentials(token_ref string) {
+func SetCredentials(token_ref string, vault_url string) {
 	token = &token_ref
 	env = GetEnv()
-	getVultCredentials()
-	url = credentials["url"].(string)
-	basic_auth = credentials["MONITORING_API_KEY"].(string)
+	getVultCredentials(&vault_url)
+	url = credentials["url_app"].(string)
+	basic_auth = credentials["API_KEY"].(string)
 }
